@@ -1,0 +1,7 @@
+{
+  "name": "Café B2B - Sistema de Gestión y Reposición",
+  "description": "Plataforma B2B para cafeterías: gestión de pedidos frecuentes, facturación personalizada, calendario de reposición de insumos, escáner de inventario, analítica financiera y soporte técnico en vivo.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
