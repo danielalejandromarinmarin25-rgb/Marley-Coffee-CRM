@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: '/Marley-Coffee-CRM/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
