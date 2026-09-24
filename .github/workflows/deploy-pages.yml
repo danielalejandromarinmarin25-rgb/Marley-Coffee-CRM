@@ -24,13 +24,35 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
+
+      - name: Setup pnpm for Marley Vendedores
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
 
       - name: Install dependencies
         run: npm install
 
       - name: Build site
         run: npm run build
+
+      - name: Install Marley Vendedores dependencies
+        working-directory: marley-vendedores
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate and build Marley Vendedores
+        working-directory: marley-vendedores
+        run: |
+          pnpm test
+          pnpm build
+
+      - name: Include Marley Vendedores in Pages
+        run: |
+          mkdir -p dist/marley-vendedores
+          cp -a marley-vendedores/dist/. dist/marley-vendedores/
+          test -f dist/marley-conecta/index.html
+          test -f dist/marley-vendedores/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
