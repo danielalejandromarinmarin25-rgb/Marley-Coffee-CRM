@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Leaf, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { users } from "../mocks/data";
 import { AuthService } from "../services";
 import { Provider, useStore } from "../store/AppStore";
@@ -233,7 +233,7 @@ export default function App() {
           <small>MARLEY COFFEE · EQUIPO COMERCIAL</small>
         </section>
         <section className="login-form">
-          <Leaf size={38} />
+          <img className="login-logo" src="./marley-coffee-logo.webp" alt="Marley Coffee · logo original con león" width="112" height="112" />
           <h1>Tu día empieza aquí.</h1>
           <p>Bienvenido a Marley Vendedores.</p>
           <form

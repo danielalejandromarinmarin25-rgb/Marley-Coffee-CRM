@@ -60,9 +60,7 @@ export function Dashboard() {
           <div className="orbit o1" />
           <div className="orbit o2" />
           <div className="coffee-seal">
-            <span>MARLEY</span>
-            <b>COFFEE</b>
-            <small>ONE LOVE. ONE TEAM.</small>
+            <img src="./marley-coffee-logo.webp" alt="" width="128" height="128" />
           </div>
           <span className="art-note">Cultivamos relaciones.</span>
         </div>

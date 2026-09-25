@@ -1,1 +1,1 @@
-{"name":"Marley Vendedores","short_name":"Vendedores","start_url":"./","scope":"./","display":"standalone","background_color":"#F6F6F4","theme_color":"#1D1B18","icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{"name":"Marley Vendedores","short_name":"Vendedores","start_url":"./","scope":"./","display":"standalone","background_color":"#F7F7F2","theme_color":"#173E2D","icons":[{"src":"./marley-coffee-logo.webp","sizes":"300x300","type":"image/webp","purpose":"any"}]}

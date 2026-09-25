@@ -13,7 +13,6 @@ import {
   RefreshCw,
   WifiOff,
   ChevronRight,
-  Leaf,
 } from "lucide-react";
 import { useStore } from "../store/AppStore";
 const nav = [
@@ -30,11 +29,8 @@ const nav = [
 export function Brand() {
   return (
     <div className="brand">
-      <Leaf size={30} />
-      <div>
-        MARLEY <span>COFFEE</span>
-        <small>VENDEDORES</small>
-      </div>
+      <img className="brand-logo" src="./marley-coffee-logo.webp" alt="Marley Coffee · logo original con león" width="100" height="100" />
+      <small>VENDEDORES</small>
     </div>
   );
 }
@@ -152,6 +148,7 @@ export function AppHeader({ path }: { path: string }) {
   const { data, user } = useStore();
   return (
     <header className="app-header">
+      <img className="mobile-brand-logo" src="./marley-coffee-logo.webp" alt="Marley Coffee" width="44" height="44" />
       <div className="breadcrumb">
         Marley Vendedores <ChevronRight size={14} />
         <b>

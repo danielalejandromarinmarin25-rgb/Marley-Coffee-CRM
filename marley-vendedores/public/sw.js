@@ -1,4 +1,4 @@
-const CACHE = "marley-vendedores-v1";
+const CACHE = "marley-vendedores-brand-v2";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -7,7 +7,7 @@ self.addEventListener("install", (event) => {
         cache.addAll([
           "./",
           "./index.html",
-          "./icon.svg",
+          "./marley-coffee-logo.webp",
           "./manifest.webmanifest",
         ]),
       ),
