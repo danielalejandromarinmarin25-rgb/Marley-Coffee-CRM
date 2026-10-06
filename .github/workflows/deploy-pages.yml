@@ -26,33 +26,32 @@ jobs:
         with:
           node-version: 24
 
-      - name: Setup pnpm for Marley Vendedores
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11.19.0
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build site
-        run: npm run build
-
-      - name: Install Marley Vendedores dependencies
-        working-directory: marley-vendedores
+      - name: Install frontend dependencies
+        working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      - name: Validate and build Marley Vendedores
-        working-directory: marley-vendedores
+      - name: Test and build frontend
+        working-directory: frontend
+        env:
+          # Valores públicos (URL y clave publicable). La clave secreta nunca se usa aquí.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
         run: |
           pnpm test
           pnpm build
 
-      - name: Include Marley Vendedores in Pages
+      - name: Assemble site
         run: |
-          mkdir -p dist/marley-vendedores
-          cp -a marley-vendedores/dist/. dist/marley-vendedores/
-          test -f dist/marley-conecta/index.html
-          test -f dist/marley-vendedores/index.html
+          mkdir -p _site/prototipo-html
+          cp -a frontend/dist/. _site/
+          cp -a legacy/prototipo-conecta-html/. _site/prototipo-html/
+          test -f _site/index.html
+          test -f _site/prototipo-html/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -60,7 +59,7 @@ jobs:
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: _site
 
   deploy:
     environment:

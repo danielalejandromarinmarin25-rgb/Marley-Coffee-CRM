@@ -1,0 +1,143 @@
+-- Escenario común de las pruebas de acceso. Se incluye desde cada archivo de prueba con \ir;
+-- cada archivo corre dentro de una transacción que se revierte al final.
+--
+--   Marley:   g  gerencia · v1 vendedor (cartera A) · v2 vendedor (cartera C, sin activar)
+--             k1 KAM (cartera B) · vx vendedor desactivado (cartera D)
+--   Empresa A (RUT 11111111-1): aa administrador · ai integrante · iv invitada sin activar
+--   Empresa B (RUT 22222222-2): ba administrador
+--   Partner P: pp partner, atiende el punto pa1 de la empresa A
+--   Puntos: pa1, pa2 (A) · pb1 (B) · pd1 (D)      Máquinas: ma1 (pa1) · mb1 (pb1)
+
+create extension if not exists pgtap with schema extensions;
+
+create schema if not exists tests;
+grant usage on schema tests to anon, authenticated;
+
+-- Actuar como una persona autenticada (mismo camino que usa PostgREST con su JWT).
+create or replace function tests.como(p_user uuid) returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', p_user, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+end $$;
+
+create or replace function tests.como_anonimo() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  perform set_config('role', 'anon', true);
+end $$;
+
+create or replace function tests.como_sistema() returns void language plpgsql as $$
+begin
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims', '', true);
+end $$;
+
+-- Filas afectadas por una sentencia, ejecutada con los permisos de quien llama.
+create or replace function tests.filas(p_sql text) returns integer language plpgsql as $$
+declare n integer;
+begin
+  execute p_sql;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+
+-- Cuántas filas de una tabla puede ver quien llama, filtrando por una columna.
+create or replace function tests.visibles(p_tabla text, p_columna text, p_valor text) returns integer
+language plpgsql as $$
+declare n integer;
+begin
+  execute format('select count(*) from public.%I where %I::text = $1', p_tabla, p_columna)
+    into n using p_valor;
+  return n;
+end $$;
+
+grant execute on all functions in schema tests to anon, authenticated;
+
+-- Identificadores fijos para leer las pruebas con facilidad.
+create or replace function tests.id(p_nombre text) returns uuid language sql immutable as $$
+  select (case p_nombre
+    when 'g'   then 'a0000000-0000-4000-8000-000000000001'
+    when 'v1'  then 'a0000000-0000-4000-8000-000000000002'
+    when 'v2'  then 'a0000000-0000-4000-8000-000000000003'
+    when 'k1'  then 'a0000000-0000-4000-8000-000000000004'
+    when 'aa'  then 'a0000000-0000-4000-8000-000000000005'
+    when 'ai'  then 'a0000000-0000-4000-8000-000000000006'
+    when 'ba'  then 'a0000000-0000-4000-8000-000000000007'
+    when 'pp'  then 'a0000000-0000-4000-8000-000000000008'
+    when 'vx'  then 'a0000000-0000-4000-8000-000000000009'
+    when 'iv'  then 'a0000000-0000-4000-8000-00000000000a'
+    when 'orgA' then 'b0000000-0000-4000-8000-00000000000a'
+    when 'orgB' then 'b0000000-0000-4000-8000-00000000000b'
+    when 'orgD' then 'b0000000-0000-4000-8000-00000000000d'
+    when 'orgP' then 'b0000000-0000-4000-8000-0000000000ff'
+    when 'pa1' then 'c0000000-0000-4000-8000-0000000000a1'
+    when 'pa2' then 'c0000000-0000-4000-8000-0000000000a2'
+    when 'pb1' then 'c0000000-0000-4000-8000-0000000000b1'
+    when 'pd1' then 'c0000000-0000-4000-8000-0000000000d1'
+    when 'ma1' then 'd0000000-0000-4000-8000-0000000000a1'
+    when 'mb1' then 'd0000000-0000-4000-8000-0000000000b1'
+  end)::uuid
+$$;
+grant execute on function tests.id(text) to anon, authenticated;
+
+create or replace function tests.org_marley() returns uuid language sql stable security definer as $$
+  select id from public.organizations where tipo = 'marley'
+$$;
+grant execute on function tests.org_marley() to anon, authenticated;
+
+-- Cuentas en Auth (con contraseña, como si ya hubieran activado su cuenta).
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
+select '00000000-0000-0000-0000-000000000000', tests.id(n), 'authenticated', 'authenticated',
+       n || '@prueba.marley.test', extensions.crypt('clave-prueba-1', extensions.gen_salt('bf')),
+       now(), now(), now()
+from unnest(array['g','v1','v2','k1','aa','ai','ba','pp','vx','iv']) as n;
+-- La invitada aún no define contraseña.
+update auth.users set encrypted_password = '' where id = tests.id('iv');
+
+insert into public.profiles (id, nombre, email)
+select tests.id(n), 'Persona ' || n, n || '@prueba.marley.test'
+from unnest(array['g','v1','v2','k1','aa','ai','ba','pp','vx','iv']) as n;
+
+insert into public.memberships (user_id, organization_id, perfil, estado) values
+  (tests.id('g'),  tests.org_marley(), 'gerencia', 'activa'),
+  (tests.id('v1'), tests.org_marley(), 'vendedor', 'activa'),
+  (tests.id('v2'), tests.org_marley(), 'vendedor', 'activa'),
+  (tests.id('k1'), tests.org_marley(), 'kam', 'activa'),
+  (tests.id('vx'), tests.org_marley(), 'vendedor', 'activa');
+
+insert into public.crm_empresas (rut, razon_social, asignado_a, canal, segmento, estado) values
+  ('11111111-1', 'Café Andino SpA',         tests.id('v1'), 'horeca', 'cadena', 'activa'),
+  ('22222222-2', 'Oficinas del Sur Ltda.',  tests.id('k1'), 'ocs', 'corporativo', 'activa'),
+  ('33333333-3', 'Panadería La Espiga SpA', tests.id('v2'), 'panaderia', 'independiente', 'activa'),
+  ('44444444-4', 'Servicentro Norte SpA',   tests.id('vx'), 'conveniencia', 'estación', 'activa'),
+  ('55555555-5', 'Hotel Suspendido SpA',    tests.id('v1'), 'horeca', 'hotel', 'suspendida');
+
+insert into public.organizations (id, tipo, rut, razon_social, nombre_comercial) values
+  (tests.id('orgA'), 'cliente', '11111111-1', 'Café Andino SpA', 'Café Andino'),
+  (tests.id('orgB'), 'cliente', '22222222-2', 'Oficinas del Sur Ltda.', 'Oficinas del Sur'),
+  (tests.id('orgD'), 'cliente', '44444444-4', 'Servicentro Norte SpA', 'Servicentro Norte'),
+  (tests.id('orgP'), 'partner', null, 'Operador Partner SpA', 'Operador Partner');
+
+insert into public.invitations (id, organization_id, email, nombre, perfil, estado, invitado_por)
+values ('e0000000-0000-4000-8000-00000000000a', tests.id('orgA'), 'iv@prueba.marley.test',
+        'Persona iv', 'cliente_integrante', 'pendiente', tests.id('aa'));
+
+insert into public.memberships (user_id, organization_id, perfil, estado, invitacion_id) values
+  (tests.id('aa'), tests.id('orgA'), 'cliente_admin', 'activa', null),
+  (tests.id('ai'), tests.id('orgA'), 'cliente_integrante', 'activa', null),
+  (tests.id('ba'), tests.id('orgB'), 'cliente_admin', 'activa', null),
+  (tests.id('pp'), tests.id('orgP'), 'partner', 'activa', null),
+  (tests.id('iv'), tests.id('orgA'), 'cliente_integrante', 'invitada', 'e0000000-0000-4000-8000-00000000000a');
+
+update public.memberships set estado = 'desactivada' where user_id = tests.id('vx');
+
+insert into public.points (id, organization_id, partner_org_id, nombre, canal, telemetria_disponible, direccion) values
+  (tests.id('pa1'), tests.id('orgA'), tests.id('orgP'), 'Andino Providencia', 'horeca', true, 'Av. Providencia 100'),
+  (tests.id('pa2'), tests.id('orgA'), null, 'Andino Ñuñoa', 'horeca', false, 'Irarrázaval 200'),
+  (tests.id('pb1'), tests.id('orgB'), null, 'Sur Torre 1', 'ocs', true, 'Apoquindo 300'),
+  (tests.id('pd1'), tests.id('orgD'), null, 'Norte Ruta 5', 'conveniencia', false, 'Ruta 5 km 10');
+
+insert into public.machines (id, point_id, modelo, numero_serie) values
+  (tests.id('ma1'), tests.id('pa1'), 'Superautomática S1', 'SER-A1'),
+  (tests.id('mb1'), tests.id('pb1'), 'Superautomática S2', 'SER-B1');

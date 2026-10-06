@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src",
+    "vite.config.ts",
+    "tests"
+  ],
+  "exclude": [
+    "src/store",
+    "src/mocks",
+    "src/repositories",
+    "src/services",
+    "src/features/dashboard",
+    "src/features/customers",
+    "src/features/visits",
+    "src/features/orders",
+    "src/features/alerts",
+    "src/features/management",
+    "src/components/Layout.tsx",
+    "src/components/Photos.tsx"
+  ]
+}
