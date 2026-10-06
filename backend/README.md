@@ -220,6 +220,24 @@ Sin dominio verificado, Resend solo acepta `onboarding@resend.dev` como remitent
 
 Para que pg_cron llame a la función en el remoto, se guardan en Vault los secretos `url_proyecto` y `clave_servicio`. Sin ellos, la tarea no hace nada.
 
+### Estado en el proyecto remoto
+
+`zgricmmfqfsfksgkzsab` (sa-east-1), 6 de octubre de 2026:
+
+- **Aplicado**:
+  - las tres migraciones de la Fase 3, con las mismas versiones que los archivos de `migrations/`;
+  - la Edge Function `enviar-resumen`;
+  - las tareas de pg_cron;
+  - los datos de la demo (`seed.sql` + `seed_demo.sql`).
+- **Contraseña de la demo**: el remoto **no** usa `marley-local-1`. La contraseña de las cuentas de la demo está solo en `backend/.env.demo-remoto`, que git ignora. En la base solo quedó su versión cifrada.
+- **Gerencia real**: la cuenta del dueño del proyecto quedó como gerencia.
+- **Falta configurar en el panel**:
+  - los secretos de `enviar-resumen` (`RESEND_API_KEY`, `RESEND_SOLO_A`, `APP_URL`);
+  - los secretos de Vault `url_proyecto` y `clave_servicio`.
+- Mientras tanto, el correo diario no sale; el resto funciona.
+
+Los comandos internos funcionan contra el remoto con la clave secreta solo en la terminal: `SUPABASE_URL=https://zgricmmfqfsfksgkzsab.supabase.co SUPABASE_SECRET_KEY=… npx pnpm@10 pedido:avanzar MC-01041`. Las pruebas automáticas (`npx pnpm@10 test`, `test:navegador`) recargan la base, así que **solo se corren en local**.
+
 ## Configurar el proyecto remoto
 
 Proyecto: `zgricmmfqfsfksgkzsab` (Marley Conecta, organización Agencia 14, región sa-east-1). Migraciones y Edge Function `invite-user` ya aplicadas el 5 de octubre de 2026; lo que sigue es la configuración del panel. El conector de Supabase no configura Auth, así que estos pasos se hacen en el panel:
