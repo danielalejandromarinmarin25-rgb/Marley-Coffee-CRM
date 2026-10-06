@@ -1,0 +1,22 @@
+{
+  "name": "marley-conecta-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:start": "supabase start --workdir . -x studio,imgproxy,vector,logflare,realtime,storage-api,supavisor",
+    "db:reset": "supabase db reset --workdir .",
+    "test:db": "supabase test db --workdir .",
+    "test:e2e": "node --test scripts/e2e-reposicion.mjs && node scripts/e2e.mjs",
+    "test": "supabase db reset --workdir . && supabase test db --workdir . && node --test scripts/e2e-reposicion.mjs && node scripts/e2e.mjs && supabase db reset --workdir .",
+    "types": "supabase gen types typescript --local --workdir . --schema public > ../frontend/src/lib/database.types.ts",
+    "demo:preparar": "supabase db reset --workdir .",
+    "reposicion:calcular": "node scripts/comando.mjs calcular",
+    "pedido:avanzar": "node scripts/comando.mjs avanzar",
+    "correo:resumen": "node scripts/comando.mjs correo"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.58.0",
+    "supabase": "2.119.0"
+  }
+}

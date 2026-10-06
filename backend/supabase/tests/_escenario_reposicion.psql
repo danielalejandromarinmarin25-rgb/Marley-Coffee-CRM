@@ -1,0 +1,45 @@
+-- Escenario de reposición sobre el escenario común de la Fase 1 (_escenario.psql).
+--   alA1: alerta crítica en pa1 (empresa A, con telemetría) · sugerido sA1
+--   alA2: alerta abierta en pa2 (empresa A, sin telemetría) · sugerido sA2
+--   alB1: alerta crítica en pb1 (empresa B, con telemetría) · sugerido sB1
+-- Los IDs se leen con tests.rid('alA1').
+select tests.como_sistema();
+
+insert into public.productos (id, sku, nombre, formato, kg_por_bolsa)
+values ('f0000000-0000-4000-8000-000000000001', 'TEST-1K', 'Café de prueba', 'Bolsa 1 kg', 1)
+on conflict (sku) do nothing;
+
+create or replace function tests.rid(p_nombre text) returns uuid language sql immutable as $$
+  select (case p_nombre
+    when 'cafe' then 'f0000000-0000-4000-8000-000000000001'
+    when 'alA1' then 'f1000000-0000-4000-8000-0000000000a1'
+    when 'alA2' then 'f1000000-0000-4000-8000-0000000000a2'
+    when 'alB1' then 'f1000000-0000-4000-8000-0000000000b1'
+    when 'sA1'  then 'f2000000-0000-4000-8000-0000000000a1'
+    when 'sA2'  then 'f2000000-0000-4000-8000-0000000000a2'
+    when 'sB1'  then 'f2000000-0000-4000-8000-0000000000b1'
+  end)::uuid
+$$;
+grant execute on function tests.rid(text) to anon, authenticated;
+
+insert into public.alertas (id, organization_id, point_id, producto_id, estado, severidad, cobertura_dias, fuente, dato_at) values
+  (tests.rid('alA1'), tests.id('orgA'), tests.id('pa1'), tests.rid('cafe'), 'critica', 'roja', 1.5, 'telemetria', now()),
+  (tests.rid('alA2'), tests.id('orgA'), tests.id('pa2'), tests.rid('cafe'), 'abierta', 'amarilla', 4, 'declarado', now()),
+  (tests.rid('alB1'), tests.id('orgB'), tests.id('pb1'), tests.rid('cafe'), 'critica', 'roja', 1, 'telemetria', now());
+
+insert into public.pedidos_sugeridos (id, alerta_id, organization_id, point_id) values
+  (tests.rid('sA1'), tests.rid('alA1'), tests.id('orgA'), tests.id('pa1')),
+  (tests.rid('sA2'), tests.rid('alA2'), tests.id('orgA'), tests.id('pa2')),
+  (tests.rid('sB1'), tests.rid('alB1'), tests.id('orgB'), tests.id('pb1'));
+
+insert into public.lineas_sugeridas (pedido_sugerido_id, organization_id, producto_id, bolsas_sugeridas, bolsas) values
+  (tests.rid('sA1'), tests.id('orgA'), tests.rid('cafe'), 4, 4),
+  (tests.rid('sA2'), tests.id('orgA'), tests.rid('cafe'), 3, 3),
+  (tests.rid('sB1'), tests.id('orgB'), tests.rid('cafe'), 5, 5);
+
+insert into public.alerta_gestiones (alerta_id, organization_id, autor_id, tipo, nota)
+values (tests.rid('alA1'), tests.id('orgA'), tests.id('v1'), 'nota', 'Llamar antes de las 11');
+
+insert into public.notificaciones (user_id, organization_id, tipo, alerta_id, titulo, cuerpo, enlace) values
+  (tests.id('aa'), tests.id('orgA'), 'alerta_nueva', tests.rid('alA1'), 'Aviso A', '-', '/reposicion'),
+  (tests.id('ba'), tests.id('orgB'), 'alerta_nueva', tests.rid('alB1'), 'Aviso B', '-', '/reposicion');

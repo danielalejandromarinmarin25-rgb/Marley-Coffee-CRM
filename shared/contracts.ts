@@ -1,11 +1,15 @@
 /** Backend boundary. These DTOs are independent of either application's UI. */
+/** Perfiles de acceso (Fase 1). Coincide con el enum public.perfil de backend/supabase/migrations. */
+export type Perfil = 'gerencia' | 'vendedor' | 'kam' | 'cliente_admin' | 'cliente_integrante' | 'partner';
+/** Lo que devuelve public.mi_sesion(): la identidad y los permisos los decide el servidor. */
 export interface Principal {
   id: string;
-  role: 'SELLER' | 'KAM' | 'COMMERCIAL_EXECUTIVE' | 'SUPERVISOR';
-  territory: string;
-  assignedCustomerIds: string[];
+  perfil: Perfil;
+  organizationId: string;
   permissions: string[];
 }
+// Los puertos siguientes son del diseño previo a la Fase 1 y se revisan en la Fase 3
+// (flujo de reposición: solo el cliente confirma; ya no aplica la regla de 24 horas).
 export interface MutationEnvelope {
   id: string;
   entityType: string;
